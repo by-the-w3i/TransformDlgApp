@@ -39,16 +39,16 @@ private:
 
 	RECT m_rcDraw;
 	RECT m_rcOver;
-	int m_nFontHeight;	
+	//int m_nFontHeight;	
 	BOOL m_bMouseOver;
 	BOOL m_bSizeChange;
 
 	HDC m_hMemDC;
-	HBITMAP m_hMemBitmap;
+	//HBITMAP m_hMemBitmap;
 	POINT m_ptStart;
 
 	CImage m_imgA;
-	CImage m_imgB;
+	//CImage m_imgB;
 
 
 public:
@@ -64,4 +64,5 @@ public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnMovestart();
 	afx_msg void OnMovestop();
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 };

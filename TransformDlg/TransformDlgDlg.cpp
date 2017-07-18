@@ -13,6 +13,9 @@
 #define new DEBUG_NEW
 #endif
 
+const double MOVE_UNIT = 1.0;
+const int WNDH = 100; //水平屏幕大小+上下高度
+const int FONTSZ = 20; // 显示的文字大小
 
 // CTransformDlgDlg 对话框
 
@@ -69,6 +72,7 @@ BEGIN_MESSAGE_MAP(CTransformDlgDlg, CDialogEx)
 	ON_WM_TIMER()
 	ON_COMMAND(ID_MOVESTART, &CTransformDlgDlg::OnMovestart)
 	ON_COMMAND(ID_MOVESTOP, &CTransformDlgDlg::OnMovestop)
+	ON_WM_ERASEBKGND()
 END_MESSAGE_MAP()
 
 
@@ -83,34 +87,34 @@ BOOL CTransformDlgDlg::OnInitDialog()
 	//		RECT m_rcOver;
 	//		int m_nFontHeight;
 	m_hMemDC = 0;
-	m_hMemBitmap = 0;
+	//m_hMemBitmap = 0;
 	m_ptStart.x = 0;
 	m_ptStart.y = 10;
 
 	m_imgA.Load(TEXT("1.jpg"));
-	m_imgB.Load(TEXT("2.jpg"));
+	//m_imgB.Load(TEXT("2.jpg"));
 
 	CDialogEx::OnInitDialog();
 //	SetIcon(m_hIcon, TRUE);			// 设置大图标
 //	SetIcon(m_hIcon, FALSE);		// 设置小图标
 	SetWindowLong(m_hWnd, GWL_EXSTYLE, GetWindowLong(m_hWnd, GWL_EXSTYLE) | 0x80000);
 	SetLayeredWindowAttributes(0xffffff, 100, LWA_COLORKEY);
-	m_hFont = ::CreateFont(50, 0, 0, 0, 900,
+	//m_nFontHeight = 50;
+	m_hFont = ::CreateFont(FONTSZ, 0, 0, 0, 900,
 		FALSE, FALSE, 0, ANSI_CHARSET,
 		OUT_DEFAULT_PRECIS,
 		CLIP_DEFAULT_PRECIS,
 		DEFAULT_QUALITY,
 		DEFAULT_PITCH | FF_SWISS, _T("宋体"));
-	m_nFontHeight = 50;
+	
 	CRect rcSave;
 	{
 		int nxScreen = ::GetSystemMetrics(SM_CXSCREEN);
 		int nyScreen = ::GetSystemMetrics(SM_CYSCREEN);
 		rcSave.left = 0;
 		rcSave.right = nxScreen;
-		int nHight = 500; //水平屏幕大小+上下高度500
-		rcSave.top = (nyScreen- nHight)/2;
-		rcSave.bottom = rcSave.top+ nHight;
+		rcSave.top = (nyScreen- WNDH)/2;
+		rcSave.bottom = rcSave.top+ WNDH;
 	}
 	MoveWindow(&rcSave);
 
@@ -123,43 +127,39 @@ BOOL CTransformDlgDlg::OnInitDialog()
 
 void CTransformDlgDlg::OnPaint()
 {
-	CPaintDC dc(this); // device context for painting
-	// 不为绘图消息调用
-	if(NULL==m_hMemDC)
-	{
-		m_hMemDC=CreateCompatibleDC(dc.m_hDC);
-		::SetBkMode(m_hMemDC,TRANSPARENT);
-	}
-	if (m_bSizeChange)
-	{
-		ReleaseGDIHandle((HANDLE*)&m_hMemBitmap);
-		m_hMemBitmap = CreateCompatibleBitmap(dc.m_hDC, m_rcClient.Width(), m_rcClient.Height());
-		::SelectObject(m_hMemDC, m_hMemBitmap);
-		m_bSizeChange = FALSE;
-	}
+	RECT rc;
+	GetClientRect(&rc);
+	
+	CPaintDC dc(this);
 
-	HFONT hOldFont=(HFONT)::SelectObject(m_hMemDC,m_hFont);
+	HDC hMemDc = CreateCompatibleDC(dc.m_hDC);
+	HBITMAP hBmp = CreateCompatibleBitmap(dc.m_hDC, rc.right, rc.bottom);
+	HBITMAP hOldBmp = (HBITMAP)SelectObject(hMemDc, hBmp);
 
-	//FillDCRect(m_hMemDC,&m_rcClient,0xff00ff);
-	FillDCRect(m_hMemDC,&m_rcClient,0xffffff);
+	//FillDCRect(hMemDc,&rc,0xff00ff); 
+	FillDCRect(hMemDc, &rc, 0xffffff);
 
-	//draw icon
 	{
-		m_imgA.Draw(m_hMemDC, m_ptStart.x, m_ptStart.y, m_imgA.GetWidth(), m_imgA.GetHeight());
-		m_imgB.Draw(m_hMemDC, m_ptStart.x+50, m_ptStart.y, m_imgB.GetWidth(), m_imgB.GetHeight());
+		m_imgA.Draw(hMemDc, m_ptStart.x, m_ptStart.y, m_imgA.GetWidth(), m_imgA.GetHeight());
+		//m_imgB.Draw(hMemDc, m_ptStart.x + 50, m_ptStart.y, m_imgB.GetWidth(), m_imgB.GetHeight());
 	}
 	{
-		::SetTextColor(m_hMemDC,0x0000ff);
-		::SetBkMode(m_hMemDC,TRANSPARENT);
-		CRect rcText(m_rcClient);
-		rcText.left += 120;
-		::DrawText(m_hMemDC,m_strShowText,m_strShowText.GetLength(),&rcText,DT_LEFT|DT_VCENTER|DT_SINGLELINE);
+		::SelectObject(hMemDc, m_hFont);
+		::SetTextColor(hMemDc, 0x0000ff);
+		::SetBkMode(hMemDc, TRANSPARENT);
+		CRect rcText(&m_rcClient);
+		rcText.left += 50;
+		::DrawText(hMemDc, m_strShowText, m_strShowText.GetLength(), &rcText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 	}
 
-	::BitBlt(dc.m_hDC,0,0,m_rcClient.Width(),m_rcClient.Height(),\
-		m_hMemDC,0,0,SRCCOPY);
-	::SelectObject(m_hMemDC,hOldFont);
+	// clear the buffer
+	BitBlt(dc.m_hDC, 0, 0, rc.right, rc.bottom, hMemDc, 0, 0, SRCCOPY);
+	SelectObject(hMemDc, hOldBmp);
+	DeleteObject(hBmp);
+	DeleteObject(hMemDc);
 }
+
+
 
 //当用户拖动最小化窗口时系统调用此函数取得光标
 //显示。
@@ -268,21 +268,11 @@ void CTransformDlgDlg::OnTimer(UINT_PTR nIDEvent)
 	// TODO: Add your message handler code here and/or call default
 	if (nIDEvent == 1)
 	{
-
-//		m_imgA.Draw(m_hMemDC, m_ptStart.x, m_ptStart.y, m_imgA.GetWidth(), m_imgA.GetHeight());
-//		m_imgB.Draw(m_hMemDC, m_ptStart.x + 50, m_ptStart.y, m_imgB.GetWidth(), m_imgB.GetHeight());
-		RECT rcDraw;
-		rcDraw.left = m_ptStart.x;
-		rcDraw.top = m_ptStart.y;
-		rcDraw.right = m_ptStart.x + 50+m_imgB.GetWidth();
-		rcDraw.bottom = m_ptStart.y + m_imgA.GetHeight();
-
-		InvalidateRect(&rcDraw);
-
-		m_ptStart.x += 1;
-
+		/// update the position
+		m_rcClient.left += MOVE_UNIT;
+		m_ptStart.x += MOVE_UNIT;
+		Invalidate();
 	}
-
 	CDialogEx::OnTimer(nIDEvent);
 }
 
@@ -297,4 +287,9 @@ void CTransformDlgDlg::OnMovestop()
 {
 	KillTimer(1);
 	// TODO: Add your command handler code here
+}
+
+BOOL CTransformDlgDlg::OnEraseBkgnd(CDC* pDC)
+{
+	return TRUE;
 }
