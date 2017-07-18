@@ -36,6 +36,7 @@ private:
 	CRect m_rcClient;
 	HFONT m_hFont;
 	CString m_strShowText;
+	CString m_strShowTitle;
 
 	RECT m_rcDraw;
 	RECT m_rcOver;
@@ -48,7 +49,9 @@ private:
 	POINT m_ptStart;
 
 	CImage m_imgA;
-	//CImage m_imgB;
+
+	/// dlg window
+	CRect m_rcDlg;
 
 
 public:

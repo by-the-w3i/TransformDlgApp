@@ -16,6 +16,8 @@
 const double MOVE_UNIT = 1.0;
 const int WNDH = 100; //水平屏幕大小+上下高度
 const int FONTSZ = 20; // 显示的文字大小
+const int PADDING = 20;
+
 
 // CTransformDlgDlg 对话框
 
@@ -83,6 +85,7 @@ BOOL CTransformDlgDlg::OnInitDialog()
 	//		CRect m_rcClient;
 	//		HFONT m_hFont;
 	m_strShowText = _T("通过CBitmap,HBITMAP,直接用OnPaint()绘制！");
+	m_strShowTitle = _T("请填入用户名！");
 	//		RECT m_rcDraw;
 	//		RECT m_rcOver;
 	//		int m_nFontHeight;
@@ -91,8 +94,7 @@ BOOL CTransformDlgDlg::OnInitDialog()
 	m_ptStart.x = 0;
 	m_ptStart.y = 10;
 
-	m_imgA.Load(TEXT("1.jpg"));
-	//m_imgB.Load(TEXT("2.jpg"));
+	m_imgA.Load(TEXT("L.jpg"));
 
 	CDialogEx::OnInitDialog();
 //	SetIcon(m_hIcon, TRUE);			// 设置大图标
@@ -106,6 +108,14 @@ BOOL CTransformDlgDlg::OnInitDialog()
 		CLIP_DEFAULT_PRECIS,
 		DEFAULT_QUALITY,
 		DEFAULT_PITCH | FF_SWISS, _T("宋体"));
+
+	/// set dialog window
+	{
+		m_rcDlg.left = 0;
+		m_rcDlg.right = m_strShowText.GetLength()*FONTSZ;
+		m_rcDlg.top = 0;
+		m_rcDlg.bottom = WNDH;
+	}
 	
 	CRect rcSave;
 	{
@@ -132,23 +142,41 @@ void CTransformDlgDlg::OnPaint()
 	
 	CPaintDC dc(this);
 
+
 	HDC hMemDc = CreateCompatibleDC(dc.m_hDC);
 	HBITMAP hBmp = CreateCompatibleBitmap(dc.m_hDC, rc.right, rc.bottom);
 	HBITMAP hOldBmp = (HBITMAP)SelectObject(hMemDc, hBmp);
 
 	//FillDCRect(hMemDc,&rc,0xff00ff); 
 	FillDCRect(hMemDc, &rc, 0xffffff);
-
+	// background
 	{
-		m_imgA.Draw(hMemDc, m_ptStart.x, m_ptStart.y, m_imgA.GetWidth(), m_imgA.GetHeight());
-		//m_imgB.Draw(hMemDc, m_ptStart.x + 50, m_ptStart.y, m_imgB.GetWidth(), m_imgB.GetHeight());
+		FillRect(hMemDc, &m_rcDlg, CreateSolidBrush(RGB(50, 151, 151)));
+		MoveToEx(hMemDc, m_rcClient.left + WNDH + PADDING, WNDH / 2.0, (LPPOINT)NULL);
+		LineTo(hMemDc, m_rcDlg.right, WNDH / 2.0);
 	}
+	// profile img
+	{
+		m_imgA.Draw(hMemDc, m_rcDlg.left,m_rcDlg.top, WNDH, WNDH);
+	}
+	// title
 	{
 		::SelectObject(hMemDc, m_hFont);
-		::SetTextColor(hMemDc, 0x0000ff);
+		::SetTextColor(hMemDc, 0x000000);
 		::SetBkMode(hMemDc, TRANSPARENT);
 		CRect rcText(&m_rcClient);
-		rcText.left += 50;
+		rcText.left += WNDH + +PADDING;
+		rcText.top -= WNDH / 2;
+		::DrawText(hMemDc, m_strShowTitle, m_strShowTitle.GetLength(), &rcText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+	}
+	/// text
+	{
+		//::SelectObject(hMemDc, m_hFont);
+		::SetTextColor(hMemDc, 0x0000ff);
+		//::SetBkMode(hMemDc, TRANSPARENT);
+		CRect rcText(&m_rcClient);
+		rcText.left += WNDH + +PADDING;
+		rcText.top += WNDH/2;
 		::DrawText(hMemDc, m_strShowText, m_strShowText.GetLength(), &rcText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 	}
 
@@ -157,6 +185,8 @@ void CTransformDlgDlg::OnPaint()
 	SelectObject(hMemDc, hOldBmp);
 	DeleteObject(hBmp);
 	DeleteObject(hMemDc);
+
+	//dc.Rectangle(0,0, m_strShowText.GetLength()*FONTSZ, WNDH);
 }
 
 
@@ -271,6 +301,8 @@ void CTransformDlgDlg::OnTimer(UINT_PTR nIDEvent)
 		/// update the position
 		m_rcClient.left += MOVE_UNIT;
 		m_ptStart.x += MOVE_UNIT;
+		m_rcDlg.left += MOVE_UNIT;
+		m_rcDlg.right += MOVE_UNIT;
 		Invalidate();
 	}
 	CDialogEx::OnTimer(nIDEvent);
