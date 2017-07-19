@@ -48,6 +48,9 @@
     <ClInclude Include="Common\Gdiplus\RoundRect.h">
       <Filter>Common\Gdiplus</Filter>
     </ClInclude>
+    <ClInclude Include="UnitDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TransformDlg.cpp">
@@ -61,6 +64,9 @@
     </ClCompile>
     <ClCompile Include="Common\Gdiplus\GraphUtils.cpp">
       <Filter>Common\Gdiplus</Filter>
+    </ClCompile>
+    <ClCompile Include="UnitDlg.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

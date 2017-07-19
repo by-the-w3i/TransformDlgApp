@@ -137,11 +137,11 @@ BOOL CTransformDlgDlg::OnInitDialog()
 
 void CTransformDlgDlg::OnPaint()
 {
-	RECT rc;
-	GetClientRect(&rc);
 	
 	CPaintDC dc(this);
 
+	RECT rc;
+	GetClientRect(&rc);
 
 	HDC hMemDc = CreateCompatibleDC(dc.m_hDC);
 	HBITMAP hBmp = CreateCompatibleBitmap(dc.m_hDC, rc.right, rc.bottom);

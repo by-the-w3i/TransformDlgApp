@@ -199,6 +199,7 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="TransformDlg.h" />
     <ClInclude Include="TransformDlgDlg.h" />
+    <ClInclude Include="UnitDlg.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Common\Gdiplus\GraphUtils.cpp" />
@@ -210,6 +211,7 @@
     </ClCompile>
     <ClCompile Include="TransformDlg.cpp" />
     <ClCompile Include="TransformDlgDlg.cpp" />
+    <ClCompile Include="UnitDlg.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TransformDlg.rc" />
