@@ -17,13 +17,7 @@ CUnitDlg::CUnitDlg(LPCTSTR path, CString title, CString message) :
 {
 	CString strFile = path;
 	m_pImage = Image::FromFile(strFile);
-	//m_pImage = LoadImageFromFile(path);
-	//nImage.Load(path);
-	//HBITMAP hBitmap = nImage.Detach();
-	//m_bmp.DeleteObject();
-	//m_bmp.Attach(hBitmap); //  转换为CBitmap对象
 
-	
 	m_hFont = ::CreateFont(FONTSZ, FONTW, 0, 0, 900,
 		FALSE, FALSE, 0, ANSI_CHARSET,
 		OUT_DEFAULT_PRECIS,
@@ -65,7 +59,7 @@ void CUnitDlg::Draw(HDC & hMemDc)
 	}
 	// profile img
 	{
-		HRGN rgn = CreateEllipticRgn(m_rcDlg.left, m_rcDlg.top, m_rcDlg.left + WNDH, m_rcDlg.top + WNDH);
+		HRGN rgn = CreateEllipticRgn(m_rcDlg.left + 1, m_rcDlg.top + 1, m_rcDlg.left + 1 + WNDH, m_rcDlg.top + 1 + WNDH);
 		Region region(rgn);
 		Graphics graph(hMemDc);
 		SolidBrush greenBrush(Color(255, 255, 255, 255));

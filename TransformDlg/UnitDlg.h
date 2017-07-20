@@ -16,10 +16,8 @@ public:
 	void Move(INT speed); // 从左往右的方向为正方向
 
 private:
-	// CImage m_img;
 	Image* m_pImage;
-	//CImage nImage;
-	//CBitmap m_bmp;
+
 	CString m_title;
 	CString m_msg;
 
