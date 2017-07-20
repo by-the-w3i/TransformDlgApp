@@ -13,8 +13,8 @@
 #define new DEBUG_NEW
 #endif
 
-const double MOVE_UNIT = 1.0;
-const int WNDH = 100; //水平屏幕大小+上下高度
+const double MOVE_UNIT = 2.0;
+const int WNDH = 80; //水平屏幕大小+上下高度
 const int FONTSZ = 20; // 显示的文字大小
 const int PADDING = 20;
 
@@ -75,6 +75,7 @@ BEGIN_MESSAGE_MAP(CTransformDlgDlg, CDialogEx)
 	ON_COMMAND(ID_MOVESTART, &CTransformDlgDlg::OnMovestart)
 	ON_COMMAND(ID_MOVESTOP, &CTransformDlgDlg::OnMovestop)
 	ON_WM_ERASEBKGND()
+	ON_WM_DESTROY()
 END_MESSAGE_MAP()
 
 
@@ -82,49 +83,33 @@ END_MESSAGE_MAP()
 
 BOOL CTransformDlgDlg::OnInitDialog()
 {
-	//		CRect m_rcClient;
-	//		HFONT m_hFont;
-	m_strShowText = _T("通过CBitmap,HBITMAP,直接用OnPaint()绘制！");
-	m_strShowTitle = _T("请填入用户名！");
-	//		RECT m_rcDraw;
-	//		RECT m_rcOver;
-	//		int m_nFontHeight;
-	m_hMemDC = 0;
-	//m_hMemBitmap = 0;
-	m_ptStart.x = 0;
-	m_ptStart.y = 10;
+	GdiplusStartupInput Startup;
+	GdiplusStartup(&m_Token, &Startup, NULL);
 
-	m_imgA.Load(TEXT("L.jpg"));
+	m_hMemDC = 0;
+
+	/// initialize the testing dlg
+	{
+		pDlg1 =new CUnitDlg(TEXT("L.jpg"), _T("DLG 1"), _T("这是对 UnitDlg class 的测试"));
+		pDlg1->SetPosition(100, 50);
+		pDlg2 = new CUnitDlg(TEXT("2.jpg"), _T("DLG 2"), _T("This is the test of the dialog 2"));
+		pDlg2->SetPosition(150, 200);
+	}
 
 	CDialogEx::OnInitDialog();
 //	SetIcon(m_hIcon, TRUE);			// 设置大图标
 //	SetIcon(m_hIcon, FALSE);		// 设置小图标
 	SetWindowLong(m_hWnd, GWL_EXSTYLE, GetWindowLong(m_hWnd, GWL_EXSTYLE) | 0x80000);
 	SetLayeredWindowAttributes(0xffffff, 100, LWA_COLORKEY);
-	//m_nFontHeight = 50;
-	m_hFont = ::CreateFont(FONTSZ, 0, 0, 0, 900,
-		FALSE, FALSE, 0, ANSI_CHARSET,
-		OUT_DEFAULT_PRECIS,
-		CLIP_DEFAULT_PRECIS,
-		DEFAULT_QUALITY,
-		DEFAULT_PITCH | FF_SWISS, _T("宋体"));
 
-	/// set dialog window
-	{
-		m_rcDlg.left = 0;
-		m_rcDlg.right = m_strShowText.GetLength()*FONTSZ;
-		m_rcDlg.top = 0;
-		m_rcDlg.bottom = WNDH;
-	}
-	
 	CRect rcSave;
 	{
 		int nxScreen = ::GetSystemMetrics(SM_CXSCREEN);
 		int nyScreen = ::GetSystemMetrics(SM_CYSCREEN);
 		rcSave.left = 0;
 		rcSave.right = nxScreen;
-		rcSave.top = (nyScreen- WNDH)/2;
-		rcSave.bottom = rcSave.top+ WNDH;
+		rcSave.top = 0;
+		rcSave.bottom = nyScreen;
 	}
 	MoveWindow(&rcSave);
 
@@ -139,7 +124,6 @@ void CTransformDlgDlg::OnPaint()
 {
 	
 	CPaintDC dc(this);
-
 	RECT rc;
 	GetClientRect(&rc);
 
@@ -147,37 +131,14 @@ void CTransformDlgDlg::OnPaint()
 	HBITMAP hBmp = CreateCompatibleBitmap(dc.m_hDC, rc.right, rc.bottom);
 	HBITMAP hOldBmp = (HBITMAP)SelectObject(hMemDc, hBmp);
 
+
 	//FillDCRect(hMemDc,&rc,0xff00ff); 
 	FillDCRect(hMemDc, &rc, 0xffffff);
-	// background
+
+	/// DRAW here 
 	{
-		FillRect(hMemDc, &m_rcDlg, CreateSolidBrush(RGB(50, 151, 151)));
-		MoveToEx(hMemDc, m_rcClient.left + WNDH + PADDING, WNDH / 2.0, (LPPOINT)NULL);
-		LineTo(hMemDc, m_rcDlg.right, WNDH / 2.0);
-	}
-	// profile img
-	{
-		m_imgA.Draw(hMemDc, m_rcDlg.left,m_rcDlg.top, WNDH, WNDH);
-	}
-	// title
-	{
-		::SelectObject(hMemDc, m_hFont);
-		::SetTextColor(hMemDc, 0x000000);
-		::SetBkMode(hMemDc, TRANSPARENT);
-		CRect rcText(&m_rcClient);
-		rcText.left += WNDH + +PADDING;
-		rcText.top -= WNDH / 2;
-		::DrawText(hMemDc, m_strShowTitle, m_strShowTitle.GetLength(), &rcText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
-	}
-	/// text
-	{
-		//::SelectObject(hMemDc, m_hFont);
-		::SetTextColor(hMemDc, 0x0000ff);
-		//::SetBkMode(hMemDc, TRANSPARENT);
-		CRect rcText(&m_rcClient);
-		rcText.left += WNDH + +PADDING;
-		rcText.top += WNDH/2;
-		::DrawText(hMemDc, m_strShowText, m_strShowText.GetLength(), &rcText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+		pDlg1->Draw(hMemDc);
+		pDlg2->Draw(hMemDc);
 	}
 
 	// clear the buffer
@@ -186,7 +147,6 @@ void CTransformDlgDlg::OnPaint()
 	DeleteObject(hBmp);
 	DeleteObject(hMemDc);
 
-	//dc.Rectangle(0,0, m_strShowText.GetLength()*FONTSZ, WNDH);
 }
 
 
@@ -298,11 +258,8 @@ void CTransformDlgDlg::OnTimer(UINT_PTR nIDEvent)
 	// TODO: Add your message handler code here and/or call default
 	if (nIDEvent == 1)
 	{
-		/// update the position
-		m_rcClient.left += MOVE_UNIT;
-		m_ptStart.x += MOVE_UNIT;
-		m_rcDlg.left += MOVE_UNIT;
-		m_rcDlg.right += MOVE_UNIT;
+		pDlg1->Move(MOVE_UNIT);
+		pDlg2->Move(MOVE_UNIT);
 		Invalidate();
 	}
 	CDialogEx::OnTimer(nIDEvent);
@@ -324,4 +281,9 @@ void CTransformDlgDlg::OnMovestop()
 BOOL CTransformDlgDlg::OnEraseBkgnd(CDC* pDC)
 {
 	return TRUE;
+}
+
+void CTransformDlgDlg::OnDestroy()
+{
+	GdiplusShutdown(m_Token);
 }

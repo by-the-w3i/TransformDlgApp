@@ -3,7 +3,7 @@
 //
 
 #pragma once
-
+#include "UnitDlg.h"
 
 // CTransformDlgDlg ¶Ô»°¿ò
 class CTransformDlgDlg : public CDialogEx
@@ -34,9 +34,6 @@ protected:
 private:
 
 	CRect m_rcClient;
-	HFONT m_hFont;
-	CString m_strShowText;
-	CString m_strShowTitle;
 
 	RECT m_rcDraw;
 	RECT m_rcOver;
@@ -45,13 +42,12 @@ private:
 	BOOL m_bSizeChange;
 
 	HDC m_hMemDC;
-	//HBITMAP m_hMemBitmap;
-	POINT m_ptStart;
+	
+	/// test dlg
+	CUnitDlg * pDlg1;
+	CUnitDlg * pDlg2;
 
-	CImage m_imgA;
-
-	/// dlg window
-	CRect m_rcDlg;
+	ULONG_PTR m_Token;
 
 
 public:
@@ -68,4 +64,5 @@ public:
 	afx_msg void OnMovestart();
 	afx_msg void OnMovestop();
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+	afx_msg void OnDestroy();
 };
