@@ -1,12 +1,12 @@
 #pragma once
-#include "BaseDlg.h"
+#include "UnitDlg.h"
 #include <vector>
 
 class CDlgManager
 {
 public:
 	CDlgManager()=delete;
-	CDlgManager(bool fromLeft, long posY, long speed);
+	CDlgManager(bool fromLeft, long posY, long speed, bool withImg = false);
 	~CDlgManager();
 
 	void DrawDlgs(CDC * pCDC);
@@ -16,8 +16,7 @@ public:
 
 	// add a dlg to ready list
 	void AddDlg();
-	void AddImgDlg();
-	void SetDlgPosition(CBaseDlg *);
+	void SetDlgPosition(CUnitDlg *);
 
 	void Move();
 
@@ -25,8 +24,8 @@ public:
 
 
 private:
-	std::vector<CBaseDlg * > m_pMove;
-	std::vector<CBaseDlg * > m_pReady;
+	std::vector<CUnitDlg * > m_pMove;
+	std::vector<CUnitDlg * > m_pReady;
 
 	CRect m_rcWnd;
 
@@ -35,5 +34,7 @@ private:
 	bool m_fromLeft = true;
 	long m_speed = 3;
 	long m_posY = 0;
+
+	bool m_withImg = false;
 };
 

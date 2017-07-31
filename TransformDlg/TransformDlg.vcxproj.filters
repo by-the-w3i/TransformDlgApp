@@ -48,9 +48,6 @@
     <ClInclude Include="Common\Gdiplus\RoundRect.h">
       <Filter>Common\Gdiplus</Filter>
     </ClInclude>
-    <ClInclude Include="UnitDlg.h">
-      <Filter>Common\Gdiplus\Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DlgManager.h">
       <Filter>Common\Gdiplus\Header Files</Filter>
     </ClInclude>
@@ -60,7 +57,7 @@
     <ClInclude Include="BaseDlg.h">
       <Filter>Common\Gdiplus\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ImgDLg.h">
+    <ClInclude Include="UnitDlg.h">
       <Filter>Common\Gdiplus\Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -77,16 +74,13 @@
     <ClCompile Include="Common\Gdiplus\GraphUtils.cpp">
       <Filter>Common\Gdiplus</Filter>
     </ClCompile>
-    <ClCompile Include="UnitDlg.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DlgManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="BaseDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ImgDLg.cpp">
+    <ClCompile Include="UnitDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

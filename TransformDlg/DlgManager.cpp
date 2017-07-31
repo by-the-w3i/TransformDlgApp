@@ -1,11 +1,9 @@
 #include "stdafx.h"
 #include "DlgManager.h"
-#include "UnitDlg.h"
-#include "ImgDLg.h"
 
 
-CDlgManager::CDlgManager(bool fromLeft, long posY, long speed) :
-	m_fromLeft(fromLeft),m_posY(posY), m_speed(speed < 0 ? -speed : speed)
+CDlgManager::CDlgManager(bool fromLeft, long posY, long speed, bool withImg) :
+	m_fromLeft(fromLeft), m_posY(posY), m_speed(speed < 0 ? -speed : speed), m_withImg(withImg)
 {
 }
 
@@ -17,9 +15,10 @@ CDlgManager::~CDlgManager()
 void CDlgManager::DrawDlgs(CDC * pCDC)
 {
 	for (auto&  p : m_pMove) {
-		p->DrawDlg(pCDC);
+		p->Draw(pCDC);
 	}
 }
+
 
 void CDlgManager::UpdateMove()
 {
@@ -72,29 +71,19 @@ void CDlgManager::AddDlg()
 	else
 		text = _T("希望你玩的开心！！！");
 
-	
-	CUnitDlg* dlg = new CUnitDlg(path, title, text);
+	CString imgPath = L"";
+	if (m_withImg) imgPath.Format(_T("%d.jpg"), (m_posY / 100 * m_cnt+1) % 5);
+
+	CUnitDlg* dlg = new CUnitDlg(path, title, text, imgPath);
 
 	SetDlgPosition(dlg);
 
 	m_pReady.push_back(dlg);
 }
 
-void CDlgManager::AddImgDlg()
-{
-	m_cnt++;
-	CString path;
-	path.Format(_T("%d.jpg"), ((m_posY / 100-1) * m_cnt) % 5);
-	CImgDLg * dlg = new CImgDLg(path);
-
-	SetDlgPosition(dlg);
-	m_pReady.push_back(dlg);
-}
 
 
-
-
-void CDlgManager::SetDlgPosition(CBaseDlg * dlg)
+void CDlgManager::SetDlgPosition(CUnitDlg * dlg)
 {
 	long width = dlg->GetWidth();
 	long startX = 0;

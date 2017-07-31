@@ -13,10 +13,6 @@
 #define new DEBUG_NEW
 #endif
 
-const int WNDH = 80; //水平屏幕大小+上下高度
-const int FONTSZ = 20; // 显示的文字大小
-const int PADDING = 20;
-
 
 // CTransformDlgDlg 对话框
 
@@ -86,15 +82,9 @@ BOOL CTransformDlgDlg::OnInitDialog()
 	GdiplusStartup(&m_Token, &Startup, NULL);
 
 	m_hMemDC = 0;
-	//m_bgImg = Image::FromFile(L"bg.jpg");
 	m_bgImg.Load(L"bg.jpg"); // load the background image
 
-	
-
-
 	CDialogEx::OnInitDialog();
-//	SetIcon(m_hIcon, TRUE);			// 设置大图标
-//	SetIcon(m_hIcon, FALSE);		// 设置小图标
 	SetWindowLong(m_hWnd, GWL_EXSTYLE, GetWindowLong(m_hWnd, GWL_EXSTYLE) | 0x80000);
 	SetLayeredWindowAttributes(0xffffff, 100, LWA_COLORKEY);
 
@@ -110,16 +100,13 @@ BOOL CTransformDlgDlg::OnInitDialog()
 	MoveWindow(&rcSave);
 	m_btn1 = { rcSave.right - 270,rcSave.bottom - 100,  rcSave.right - 220, rcSave.bottom - 50 };
 	m_btn2 = { rcSave.right - 200,rcSave.bottom - 100,  rcSave.right - 150, rcSave.bottom - 50 };
-	m_btn3 = { rcSave.right - 130,rcSave.bottom - 100,  rcSave.right - 80, rcSave.bottom - 50 };
 
 	m_mng1 = new CDlgManager(false, 200, 3);
 	m_mng1->SetWindow(rcSave);
 
-	m_mng2 = new CDlgManager(false, 300, 4);
+	m_mng2 = new CDlgManager(false, 300, 4,true);
 	m_mng2->SetWindow(rcSave);
 
-	m_mng3 = new CDlgManager(false, 500, 3);
-	m_mng3->SetWindow(rcSave);
 
 	// start moving at the very beginning
 	OnMovestart();
@@ -170,13 +157,11 @@ void CTransformDlgDlg::OnPaint()
 		{
 			dcMem.FillSolidRect(&m_btn1, RGB(255, 255, 0));
 			dcMem.FillSolidRect(&m_btn2, RGB(0, 255, 255));
-			dcMem.FillSolidRect(&m_btn3, RGB(255, 0, 255));
 		}
 
 		//// draw dialog
 		m_mng1->DrawDlgs(&dcMem);
 		m_mng2->DrawDlgs(&dcMem);
-		m_mng3->DrawDlgs(&dcMem);
 
 
 		//// 从内存拷贝到设备dc
@@ -295,10 +280,6 @@ void CTransformDlgDlg::OnLButtonUp(UINT nFlags, CPoint point)
 	{
 		m_mng2->AddDlg();
 	}
-	if (point.x < m_btn3.right && point.x > m_btn3.left && point.y < m_btn3.bottom && point.y > m_btn3.top)
-	{
-		m_mng3->AddImgDlg();
-	}
 	CDialogEx::OnLButtonUp(nFlags, point);
 }
 
@@ -318,7 +299,6 @@ void CTransformDlgDlg::OnTimer(UINT_PTR nIDEvent)
 		// move dialog
 		m_mng1->Move();
 		m_mng2->Move();
-		m_mng3->Move();
 		//RECT rc = {0, 200, m_rcClient.Width(), 380};
 		//InvalidateRect(&rc);
 		Invalidate();
@@ -336,7 +316,7 @@ void CTransformDlgDlg::OnTimer(UINT_PTR nIDEvent)
 
 void CTransformDlgDlg::OnMovestart()
 {
-	SetTimer(1, 10, NULL);
+	SetTimer(1, 15, NULL);
 	//SetTimer(2, 5, NULL);
 }
 

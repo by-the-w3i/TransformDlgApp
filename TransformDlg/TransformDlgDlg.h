@@ -48,12 +48,10 @@ private:
 	// test button
 	RECT m_btn1;
 	RECT m_btn2;
-	RECT m_btn3;
 
 	// unit dlg manager
 	CDlgManager * m_mng1;
 	CDlgManager * m_mng2;
-	CDlgManager * m_mng3;
 
 
 public:
