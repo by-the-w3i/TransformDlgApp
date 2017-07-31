@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "UnitDlg.h"
+#include "DlgManager.h"
 
 // CTransformDlgDlg ¶Ô»°¿ò
 class CTransformDlgDlg : public CDialogEx
@@ -32,22 +32,28 @@ protected:
 	DECLARE_MESSAGE_MAP()
 
 private:
-
 	CRect m_rcClient;
 
-	RECT m_rcDraw;
-	RECT m_rcOver;
-	//int m_nFontHeight;	
 	BOOL m_bMouseOver;
 	BOOL m_bSizeChange;
+	BOOL m_bgChange = TRUE;
 
 	HDC m_hMemDC;
-	
-	/// test dlg
-	CUnitDlg * pDlg1;
-	CUnitDlg * pDlg2;
+
+	//bool m_firstDraw = true;
+	CImage m_bgImg;
 
 	ULONG_PTR m_Token;
+
+	// test button
+	RECT m_btn1;
+	RECT m_btn2;
+	RECT m_btn3;
+
+	// unit dlg manager
+	CDlgManager * m_mng1;
+	CDlgManager * m_mng2;
+	CDlgManager * m_mng3;
 
 
 public:

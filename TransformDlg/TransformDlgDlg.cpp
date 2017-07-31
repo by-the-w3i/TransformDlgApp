@@ -3,17 +3,16 @@
 //
 
 #include "stdafx.h"
-#include <vector>
 
 #include "TransformDlg.h"
 #include "TransformDlgDlg.h"
 #include "afxdialogex.h"
 
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
-const double MOVE_UNIT = 2.0;
 const int WNDH = 80; //水平屏幕大小+上下高度
 const int FONTSZ = 20; // 显示的文字大小
 const int PADDING = 20;
@@ -87,14 +86,11 @@ BOOL CTransformDlgDlg::OnInitDialog()
 	GdiplusStartup(&m_Token, &Startup, NULL);
 
 	m_hMemDC = 0;
+	//m_bgImg = Image::FromFile(L"bg.jpg");
+	m_bgImg.Load(L"bg.jpg"); // load the background image
 
-	/// initialize the testing dlg
-	{
-		pDlg1 =new CUnitDlg(TEXT("L.jpg"), _T("DLG 1"), _T("这是对 UnitDlg class 的测试"));
-		pDlg1->SetPosition(100, 50);
-		pDlg2 = new CUnitDlg(TEXT("2.jpg"), _T("DLG 2"), _T("This is the test of the dialog 2"));
-		pDlg2->SetPosition(150, 200);
-	}
+	
+
 
 	CDialogEx::OnInitDialog();
 //	SetIcon(m_hIcon, TRUE);			// 设置大图标
@@ -112,9 +108,27 @@ BOOL CTransformDlgDlg::OnInitDialog()
 		rcSave.bottom = nyScreen;
 	}
 	MoveWindow(&rcSave);
+	m_btn1 = { rcSave.right - 270,rcSave.bottom - 100,  rcSave.right - 220, rcSave.bottom - 50 };
+	m_btn2 = { rcSave.right - 200,rcSave.bottom - 100,  rcSave.right - 150, rcSave.bottom - 50 };
+	m_btn3 = { rcSave.right - 130,rcSave.bottom - 100,  rcSave.right - 80, rcSave.bottom - 50 };
 
+	m_mng1 = new CDlgManager(false, 200, 3);
+	m_mng1->SetWindow(rcSave);
+
+	m_mng2 = new CDlgManager(false, 300, 4);
+	m_mng2->SetWindow(rcSave);
+
+	m_mng3 = new CDlgManager(false, 500, 3);
+	m_mng3->SetWindow(rcSave);
+
+	// start moving at the very beginning
+	OnMovestart();
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
+
+
+
+
 
 // 如果向对话框添加最小化按钮，则需要下面的代码
 //  来绘制该图标。  对于使用文档/视图模型的 MFC 应用程序，
@@ -122,30 +136,64 @@ BOOL CTransformDlgDlg::OnInitDialog()
 
 void CTransformDlgDlg::OnPaint()
 {
-	
-	CPaintDC dc(this);
-	RECT rc;
-	GetClientRect(&rc);
-
-	HDC hMemDc = CreateCompatibleDC(dc.m_hDC);
-	HBITMAP hBmp = CreateCompatibleBitmap(dc.m_hDC, rc.right, rc.bottom);
-	HBITMAP hOldBmp = (HBITMAP)SelectObject(hMemDc, hBmp);
-
-
-	//FillDCRect(hMemDc,&rc,0xff00ff); 
-	FillDCRect(hMemDc, &rc, 0xffffff);
-
-	/// DRAW here 
+	if (IsIconic())
 	{
-		pDlg1->Draw(hMemDc);
-		pDlg2->Draw(hMemDc);
+		//......
+	}
+	else
+	{
+		////CDialog::OnPaint(); //不要调用这个
+		CPaintDC dc(this);//对话框的dc//通常CPaintDC用来响应WM_PAINT消息。
+		//				  //CPaintDC是从CDC派生出来的：在构造时自动调用CWnd::BeginPaint,析构时调用CWnd::EndPaint。
+
+		//CPaintDC paintDC(this);     // device context for painting
+		//CDoubleBufferDC dc(&paintDC); // device context for painting
+
+		RECT rect;// 客户区矩形
+		GetClientRect(&rect);		
+
+		// 使用双缓冲避免屏幕刷新时闪烁
+		CDC dcMem;// 内存dc
+		CBitmap bmpMem; // 位图
+		dcMem.CreateCompatibleDC(NULL);// 创建兼容dc
+		bmpMem.CreateCompatibleBitmap(&dc, rect.right - rect.left, rect.bottom - rect.top);//创建跟客户区域大小一样的(空)位图
+																						   // 把位图选到设备上下文环境中
+		CBitmap *pOld = dcMem.SelectObject(&bmpMem);
+
+
+		//dcMem.FillSolidRect(&rect, RGB(255, 255, 255));
+		//FillDCRect(dcMem, &rect, 0xffffff);
+		//background
+		dcMem.SetStretchBltMode(COLORONCOLOR);//很有用，使图片缩放后颜色不失真
+		m_bgImg.Draw(dcMem, rect);
+		
+		{
+			dcMem.FillSolidRect(&m_btn1, RGB(255, 255, 0));
+			dcMem.FillSolidRect(&m_btn2, RGB(0, 255, 255));
+			dcMem.FillSolidRect(&m_btn3, RGB(255, 0, 255));
+		}
+
+		//// draw dialog
+		m_mng1->DrawDlgs(&dcMem);
+		m_mng2->DrawDlgs(&dcMem);
+		m_mng3->DrawDlgs(&dcMem);
+
+
+		//// 从内存拷贝到设备dc
+		dc.BitBlt(0, 0, rect.right - rect.left, rect.bottom - rect.top, &dcMem, 0, 0, SRCCOPY);
+		////dc.StretchBlt(0, 0, rect.right - rect.left, rect.bottom - rect.top, &dcMem, 0, 0, rect.right - rect.left, rect.bottom - rect.top, SRCCOPY);
+
+		dc.SelectObject(pOld);
+		// 释放资源
+		bmpMem.DeleteObject();
+		dcMem.DeleteDC();
 	}
 
-	// clear the buffer
-	BitBlt(dc.m_hDC, 0, 0, rc.right, rc.bottom, hMemDc, 0, 0, SRCCOPY);
-	SelectObject(hMemDc, hOldBmp);
-	DeleteObject(hBmp);
-	DeleteObject(hMemDc);
+	if (TRUE == m_bgChange)
+	{
+		m_bgChange = FALSE;
+		ModifyStyle(0, WS_CLIPCHILDREN);
+	}
 
 }
 
@@ -166,8 +214,6 @@ void CTransformDlgDlg::OnSize(UINT nType, int cx, int cy)
 	if (::IsWindow(m_hWnd))
 	{
 		GetClientRect(&m_rcClient);
-		m_rcDraw = m_rcClient;
-		m_rcOver = m_rcClient;
 	}
 	Invalidate();
 	m_bSizeChange = TRUE;
@@ -232,7 +278,7 @@ void CTransformDlgDlg::OnRButtonUp(UINT nFlags, CPoint point)
 void CTransformDlgDlg::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	// TODO: Add your message handler code here and/or call default
-	SendMessage(WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(point.x, point.y));
+	//SendMessage(WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(point.x, point.y));
 
 	CDialogEx::OnLButtonDown(nFlags, point);
 }
@@ -241,7 +287,18 @@ void CTransformDlgDlg::OnLButtonDown(UINT nFlags, CPoint point)
 void CTransformDlgDlg::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	// TODO: Add your message handler code here and/or call default
-
+	if (point.x < m_btn1.right && point.x > m_btn1.left && point.y < m_btn1.bottom && point.y > m_btn1.top)
+	{
+		m_mng1->AddDlg();
+	}
+	if (point.x < m_btn2.right && point.x > m_btn2.left && point.y < m_btn2.bottom && point.y > m_btn2.top)
+	{
+		m_mng2->AddDlg();
+	}
+	if (point.x < m_btn3.right && point.x > m_btn3.left && point.y < m_btn3.bottom && point.y > m_btn3.top)
+	{
+		m_mng3->AddImgDlg();
+	}
 	CDialogEx::OnLButtonUp(nFlags, point);
 }
 
@@ -258,9 +315,20 @@ void CTransformDlgDlg::OnTimer(UINT_PTR nIDEvent)
 	// TODO: Add your message handler code here and/or call default
 	if (nIDEvent == 1)
 	{
-		pDlg1->Move(MOVE_UNIT);
-		pDlg2->Move(MOVE_UNIT);
+		// move dialog
+		m_mng1->Move();
+		m_mng2->Move();
+		m_mng3->Move();
+		//RECT rc = {0, 200, m_rcClient.Width(), 380};
+		//InvalidateRect(&rc);
 		Invalidate();
+	}
+	else if (nIDEvent == 2)
+	{
+		m_mng2->Move();
+		RECT rc = { 0, 300, m_rcClient.Width(), 380 };
+		InvalidateRect(&rc);
+		//Invalidate();
 	}
 	CDialogEx::OnTimer(nIDEvent);
 }
@@ -268,13 +336,15 @@ void CTransformDlgDlg::OnTimer(UINT_PTR nIDEvent)
 
 void CTransformDlgDlg::OnMovestart()
 {
-	SetTimer(1, 20,NULL);
+	SetTimer(1, 10, NULL);
+	//SetTimer(2, 5, NULL);
 }
 
 
 void CTransformDlgDlg::OnMovestop()
 {
 	KillTimer(1);
+	//KillTimer(2);
 	// TODO: Add your command handler code here
 }
 

@@ -6,96 +6,154 @@
 #define new DEBUG_NEW
 #endif
 
-const double MOVE_UNIT = 1.0;
-const int WNDH = 80; //水平 dialog 高度
-const int FONTSZ = 20; // 文字高度
-const int FONTW = 10; // 文字宽度
-const int PADDING = 0;
 
-CUnitDlg::CUnitDlg(LPCTSTR path, CString title, CString message) :
-	m_title(title), m_msg(message)
+CUnitDlg::CUnitDlg(CString path, CString title, CString message) : CBaseDlg::CBaseDlg(path)
 {
-	CString strFile = path;
-	m_pImage = Image::FromFile(strFile);
+	m_title = title;
+	m_msg = message;
 
-	m_hFont = ::CreateFont(FONTSZ, FONTW, 0, 0, 900,
+	m_hFont = ::CreateFont(m_fontH, m_fontW, 0, 0, 900,
 		FALSE, FALSE, 0, ANSI_CHARSET,
 		OUT_DEFAULT_PRECIS,
 		CLIP_DEFAULT_PRECIS,
 		DEFAULT_QUALITY,
 		DEFAULT_PITCH | FF_SWISS, _T("宋体"));
 
-	m_width = (title.GetLength() > message.GetLength() ? title.GetLength() : message.GetLength()) * FONTW 
-		+ PADDING *2 + WNDH*3;
+	m_height = 80;
+	m_imgPad = 6;
+
+	m_width = (title.GetLength() > message.GetLength() ? title.GetLength() : message.GetLength()) * m_fontW *2.5
+		+ m_padding *2 + m_height;
 
 	// default start at (0, 0)
-	SetPosition(0, 0);
+	SetPosition(-m_width, 0);
 }
 
 
 
-void CUnitDlg::SetPosition(LONG startX, LONG startY)
+void CUnitDlg::DrawDlg(CDC * pCDC)
 {
-	m_rcDlg.left = startX;
-	m_rcDlg.right = startX+m_width;
-	m_rcDlg.top = startY;
-	m_rcDlg.bottom = startY+WNDH;
-}
+	//if (m_rcDlg.right < 0 || m_rcDlg.left > m_rcWnd.right) return;
+	// image dc for drawing the main image
+	CDC cdcMEM;
+	CBitmap cBmp;
+	cdcMEM.CreateCompatibleDC(pCDC);
+	cBmp.CreateCompatibleBitmap(pCDC, m_width, m_height);
+	cdcMEM.SelectObject(&cBmp); //将位图选择进内存DC
+
+	RECT dlgRc = { 0,0,m_width,m_height };
+	cdcMEM.FillSolidRect(&dlgRc, 0xffffff);
+
+	// mask DC for filtering the white transparent parts
+	CDC cMaskDc;
+	cMaskDc.CreateCompatibleDC(pCDC);
+	cMaskDc.FillSolidRect(&dlgRc, 0xffffff);
 
 
-void CUnitDlg::Draw(HDC & hMemDc)
-{
+	// create the bmp for background in MaskDc
+	CBitmap cMaskBmp;
+	cMaskBmp.CreateCompatibleBitmap(pCDC, m_width, m_height);
+	cMaskDc.SelectObject(&cMaskBmp);
+
+
+	
 	// background
 	{
-		HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
-		HBRUSH hBrush = CreateSolidBrush(RGB(128, 255, 128));
-		HGDIOBJ hOldPen = ::SelectObject(hMemDc, hPen);
-		HGDIOBJ hOldBrush = ::SelectObject(hMemDc, hBrush);
-		::RoundRect(hMemDc, m_rcDlg.left, m_rcDlg.top, m_rcDlg.right, m_rcDlg.bottom, WNDH, WNDH);
-		MoveToEx(hMemDc, m_rcDlg.left + WNDH + PADDING, (m_rcDlg.top+m_rcDlg.bottom) / 2.0, (LPPOINT)NULL);
-		LineTo(hMemDc, m_rcDlg.right-PADDING, (m_rcDlg.top + m_rcDlg.bottom) / 2.0);
-		::DeleteObject(::SelectObject(hMemDc, hOldPen));
-		::DeleteObject(::SelectObject(hMemDc, hOldBrush));
+		CBrush gridBrush(RGB(10, 10, 10));
+		CBrush *oldBrush = cdcMEM.SelectObject(&gridBrush);
+		//cdcMEM.SelectObject(&brush);
+		cdcMEM.RoundRect(dlgRc.left, dlgRc.top, dlgRc.right, dlgRc.bottom, m_height, m_height);
+
+		// copy the background
+		cMaskDc.BitBlt(0, 0, m_width, m_height, pCDC, m_rcDlg.left, m_rcDlg.top, SRCCOPY);
+		// filter the white trans parts
+		cMaskDc.TransparentBlt(0, 0, m_width, m_height, &cdcMEM, 0, 0, m_width, m_height, RGB(255,255,255)/*SRCCOPY*/);
+		cdcMEM.BitBlt(0, 0, m_width, m_height, pCDC, m_rcDlg.left, m_rcDlg.top, SRCCOPY);
+		// alpha channel
+		BLENDFUNCTION blend = { 0 };
+		blend.AlphaFormat = 0;
+		blend.BlendOp = AC_SRC_OVER;
+		blend.BlendFlags = 0;
+		blend.SourceConstantAlpha = 125;
+		cdcMEM.AlphaBlend(0,0, m_width, m_height, &cMaskDc, 0, 0, m_width, m_height, blend);//内存DC到内存DC
 	}
+
+	// draw img
+	{
+		int side = m_height - m_imgPad * 2;
+		CDC imgDc;
+		CBitmap imgBmp;
+		imgDc.CreateCompatibleDC(pCDC);
+		imgBmp.CreateCompatibleBitmap(pCDC, side, side);
+		imgDc.SelectObject(&imgBmp);
+		//imgDc.FillSolidRect(0,0, m_height - m_imgPad * 2, m_height - m_imgPad * 2, 0xff00);
+		imgDc.SetStretchBltMode(COLORONCOLOR);//很有用，使图片缩放后颜色不失真
+		//if (!m_img) {
+		//	m_img.Load(m_path);
+		//}
+		m_img.Draw(imgDc, 0, 0, side, side);
+
+		CDC baseDc;
+		CBitmap baseBmp;
+		baseDc.CreateCompatibleDC(pCDC);
+		baseBmp.CreateCompatibleBitmap(pCDC, side, side);
+		baseDc.SelectObject(&baseBmp);
+		CBrush gridBrush(RGB(255, 0, 0));
+		CBrush *oldBrush = baseDc.SelectObject(&gridBrush);
+		baseDc.RoundRect(0, 0, side,side,side,side);
+
+		imgDc.TransparentBlt(0, 0, side, side, &baseDc, 0, 0, side,side, RGB(255, 0, 0));
+		cdcMEM.TransparentBlt(m_imgPad, m_imgPad, m_height-2*m_imgPad, m_height- 2*m_imgPad, &imgDc, 0, 0,side,side, RGB(0, 0, 0));
+	}
+
 	// profile img
 	{
-		HRGN rgn = CreateEllipticRgn(m_rcDlg.left + 1, m_rcDlg.top + 1, m_rcDlg.left + 1 + WNDH, m_rcDlg.top + 1 + WNDH);
-		Region region(rgn);
-		Graphics graph(hMemDc);
-		SolidBrush greenBrush(Color(255, 255, 255, 255));
-		Pen blackPen(Color(255, 0, 0, 0), 1);
-		graph.DrawEllipse(&blackPen, m_rcDlg.left, m_rcDlg.top, WNDH, WNDH);
-		graph.SetClip(&region, CombineModeReplace);
-		graph.DrawImage(m_pImage, m_rcDlg.left, m_rcDlg.top, WNDH, WNDH);	
+		//Graphics g(cdcMEM);
+// 		HRGN rgn = CreateEllipticRgn(m_imgPad + 1, m_imgPad + 1, m_height - m_imgPad + 1, m_height - m_imgPad + 1);
+// 		Region region(rgn);
+// 		g.SetClip(&region, CombineModeReplace);
+		//g.DrawImage(m_pImage, 0, 0, m_height, m_height);
+
+ 		Graphics gBorder(cdcMEM);
+ 		gBorder.SetSmoothingMode(Gdiplus::SmoothingModeHighQuality);//抗锯齿
+ 		Pen blackPen(Color(150, 10,10,10), 4);
+ 		gBorder.DrawEllipse(&blackPen, m_imgPad, m_imgPad, m_height- 2*m_imgPad, m_height- 2*m_imgPad);
 	}
 
 	// title
 	{
-		::SelectObject(hMemDc, m_hFont);
-		::SetTextColor(hMemDc, 0x000000);
-		::SetBkMode(hMemDc, TRANSPARENT);
-		CRect rcText(&m_rcDlg);
-		rcText.left += WNDH +PADDING;
-		rcText.top -= WNDH / 2;
-		::DrawText(hMemDc, m_title, m_title.GetLength(), &rcText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+		::SelectObject(cdcMEM, m_hFont);
+		::SetTextColor(cdcMEM, RGB(255, 220, 0));
+		::SetBkMode(cdcMEM, TRANSPARENT);
+		CRect rcText = { m_height + m_padding , 0, m_width, m_height/2 };
+		::DrawText(cdcMEM, m_title, m_title.GetLength(), &rcText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 	}
-	/// text
+	// text
 	{
-		::SetTextColor(hMemDc, 0x0000ff);
-		CRect rcText(&m_rcDlg);
-		rcText.left += WNDH +PADDING;
-		rcText.top += WNDH / 2;
-		::DrawText(hMemDc, m_msg, m_msg.GetLength(), &rcText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+		::SetTextColor(cdcMEM, RGB(250, 250, 250));
+		CRect rcText = { m_height + m_padding ,  m_height / 2 , m_width, m_height};
+		::DrawText(cdcMEM, m_msg, m_msg.GetLength(), &rcText, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 	}
+
+	//CImage cc;
+	//cc.Load(L"L.jpg");
+	//cdcMEM.SetStretchBltMode(COLORONCOLOR);//很有用，使图片缩放后颜色不失真
+	//cc.Draw(cdcMEM, 0, 0, m_height, m_height);
+
+	pCDC->BitBlt(m_rcDlg.left, m_rcDlg.top, m_width, m_height, &cdcMEM, 0, 0, SRCCOPY);
+
+	// 释放资源
+	cMaskBmp.DeleteObject();
+	cMaskDc.DeleteDC();
+	cBmp.DeleteObject();
+	cdcMEM.DeleteDC();	
 }
 
-void CUnitDlg::Move(INT speed)
-{
-	m_rcDlg.left += speed;
-	m_rcDlg.right += speed;
-}
+
+
 
 
 CUnitDlg::~CUnitDlg()
 {
 }
+

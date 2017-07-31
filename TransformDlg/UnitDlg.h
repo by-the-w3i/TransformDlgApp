@@ -1,31 +1,28 @@
 #pragma once
+#include "BaseDlg.h"
 
 using namespace Gdiplus;
 
-class CUnitDlg
+class CUnitDlg : public CBaseDlg
 {
 public:
-	CUnitDlg()=delete;
+	//CUnitDlg()=delete;
 	~CUnitDlg();
 
-	CUnitDlg(LPCTSTR path, CString title, CString message);
+	CUnitDlg(CString path, CString title, CString message);
 
-	void SetPosition(LONG startX, LONG startY);
-
-	void Draw(HDC & hMemDc);
-	void Move(INT speed); // 从左往右的方向为正方向
+	void DrawDlg(CDC  * pCDC) override;
 
 private:
-	Image* m_pImage;
 
 	CString m_title;
 	CString m_msg;
 
-	DOUBLE m_width;
+	int m_padding = 0;
 
+	int m_fontW = 10;
+	int m_fontH = 20;
 	HFONT m_hFont;
-
-	CRect m_rcDlg; // the rectangle dialog interface
 };
 
 
